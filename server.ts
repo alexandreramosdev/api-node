@@ -1,5 +1,8 @@
 import fastify from "fastify";
 
+import { courses } from "./src/database/schema.ts";
+import { db } from "./src/database/client.ts";
+
 const server = fastify({
   logger: {
     transport: {
@@ -10,6 +13,14 @@ const server = fastify({
       },
     },
   },
+});
+
+server.get("/courses", async (request, reply) => {
+  const result = await db
+    .select({ id: courses.id, name: courses.name })
+    .from(courses);
+
+  return reply.status(200).send({ courses: result });
 });
 
 server.get("/health", async () => {
