@@ -1,0 +1,13 @@
+services:
+  postgres17:
+    image: postgres:17-alpine
+    container_name: postgres17
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=docker
+      - POSTGRES_PASSWORD=docker
+      - POSTGRES_DB=courses
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
