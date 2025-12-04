@@ -15,7 +15,7 @@ export const getAllCoursesRoute: FastifyPluginAsyncZod = async (server) => {
             courses: z.array(
               z.object({
                 id: z.uuid(),
-                name: z.string(),
+                title: z.string(),
                 description: z.string().nullable(),
               })
             ),
