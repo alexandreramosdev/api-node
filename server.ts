@@ -1,8 +1,18 @@
 import fastify from "fastify";
+import { fastifySwagger } from "@fastify/swagger";
+import {
+  validatorCompiler,
+  serializerCompiler,
+  jsonSchemaTransform,
+  type ZodTypeProvider,
+} from "fastify-type-provider-zod";
 
-import { courses } from "./src/database/schema.ts";
-import { db } from "./src/database/client.ts";
-import { eq } from "drizzle-orm";
+import { createCourseRoute } from "./src/routes/create-course.ts";
+import { getAllCoursesRoute } from "./src/routes/get-all-courses.ts";
+import { getCourseByIdRoute } from "./src/routes/get-course-by-id.ts";
+import { deleteCourseByIdRoute } from "./src/routes/delete-course-by-id.ts";
+
+import scalarApiReference from "@scalar/fastify-api-reference";
 
 const server = fastify({
   logger: {
@@ -14,66 +24,32 @@ const server = fastify({
       },
     },
   },
-});
+}).withTypeProvider<ZodTypeProvider>();
 
-server.post("/api/courses", async (request, reply) => {
-  type Body = {
-    name: string;
-    description?: string;
-  };
+if (process.env.NODE_ENV === "development") {
+  server.register(fastifySwagger, {
+    openapi: {
+      info: {
+        title: "API Node",
+        description: "API REST em Node.js + TypeScript + Fastify",
+        version: "1.0.0",
+      },
+    },
+    transform: jsonSchemaTransform,
+  });
 
-  const { name, description } = request.body as Body;
+  server.register(scalarApiReference, {
+    routePrefix: "/api/docs",
+  });
+}
 
-  if (!name) {
-    return reply.status(400).send({ message: "Name is required" });
-  }
+server.setValidatorCompiler(validatorCompiler);
+server.setSerializerCompiler(serializerCompiler);
 
-  const result = await db
-    .insert(courses)
-    .values({ name, description })
-    .returning();
-
-  return reply.status(201).send({ courseId: result[0].id });
-});
-
-server.get("/api/courses", async (request, reply) => {
-  const result = await db.select().from(courses);
-
-  return reply.status(200).send({ courses: result });
-});
-
-server.get("/api/courses/:id", async (request, reply) => {
-  type Params = {
-    id: string;
-  };
-
-  const params = request.params as Params;
-  const courseId = params.id;
-
-  const result = await db
-    .select()
-    .from(courses)
-    .where(eq(courses.id, courseId));
-
-  if (result.length === 0) {
-    return reply.status(404).send({ message: "Course not found" });
-  }
-
-  return reply.status(200).send({ course: result[0] });
-});
-
-server.delete("/api/courses/:id", async (request, reply) => {
-  type Params = {
-    id: string;
-  };
-
-  const params = request.params as Params;
-  const courseId = params.id;
-
-  await db.delete(courses).where(eq(courses.id, courseId));
-
-  return reply.status(200).send({ message: "Course deleted successfully" });
-});
+server.register(createCourseRoute);
+server.register(getAllCoursesRoute);
+server.register(getCourseByIdRoute);
+server.register(deleteCourseByIdRoute);
 
 server.listen({ port: 3000 }).then(() => {
   console.log("Server running on port 3000");
