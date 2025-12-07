@@ -1,0 +1,23 @@
+import request from "supertest";
+import { expect, test } from "vitest";
+import { server } from "../app.ts";
+import { makeCourse } from "../tests/factories/make-course.ts";
+
+test("get a course by ID", async () => {
+  await server.ready();
+
+  const course = await makeCourse();
+
+  const response = await request(server.server).get(
+    `/api/courses/${course.id}`
+  );
+
+  expect(response.status).toBe(200);
+  expect(response.body).toEqual({
+    course: {
+      id: course.id,
+      title: course.title,
+      description: course.description,
+    },
+  });
+});
