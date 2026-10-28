@@ -12,6 +12,7 @@ postgres_data/
 # Nunca comente esta linha!
 .env
 .env.*
+!.env.example
 
 # Logs
 logs
